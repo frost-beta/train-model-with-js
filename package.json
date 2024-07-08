@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "license": "Unlicense",
+  "dependencies": {
+    "@frost-beta/mlx": "0.0.10"
+  }
+}
