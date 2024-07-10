@@ -1,4 +1,5 @@
 /weights.safetensors
+/tokenizer.json
 *.swp
 
 yarn.lock
