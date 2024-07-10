@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs'
+import nextTick from 'tick-promise'
 import {core as mx} from '@frost-beta/mlx'
 
 import Model from './model.js'
@@ -29,18 +30,21 @@ async function main() {
 
 // Generate tokens from prompt.
 async function* step(prompt, model, maxTokens = 512, temperature = 0.8) {
+  // Pass the tokens to the model and get the next token.
   const forward = (tokens) => {
-    let logits = model.forward(mx.array([tokens.slice(-contextSize)], mx.int32))
-    logits = logits.index(mx.Slice(), -1, mx.Slice())
-    return sample(logits, temperature)
+    const inputs = mx.array([ tokens.slice(-contextSize) ], mx.int32)
+    const logits = model.forward(inputs)
+    return sample(logits.index(0, -1), temperature)
   }
 
   let tokens = prompt
   while (true) {
     const token = mx.tidy(() => forward(tokens).item())
     tokens.push(token)
-    yield await new Promise(resolve => process.nextTick(() => resolve(token)))
-
+    // Yield the result in the next tick of loop, so GC can get a chance to run.
+    await nextTick()
+    yield token
+    // Stop when hit maxTokens limit.
     if (tokens.length > maxTokens)
       return
   }

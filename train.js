@@ -2,6 +2,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import nextTick from 'tick-promise'
 import {core as mx, optimizers as optim, nn, utils} from '@frost-beta/mlx'
 
 import Model from './model.js'
@@ -65,6 +66,7 @@ async function main() {
     for await (const [x, y] of iterateBatches(xTrain, yTrain, batchSize)) {
       // Use mx.tidy to free all the intermediate tensors immediately.
       mx.tidy(() => {
+        // Compute loss and gradients, then update the model.
         const [loss, grads] = lossAndGradFunction(model, x, y)
         optimizer.update(model, grads)
         mx.eval(model.state, optimizer.state)
@@ -144,9 +146,9 @@ function loadData(tokens, contextSize) {
 async function* iterateBatches(x, y, batchSize) {
   for (let i = 0; i < x.shape[0]; i += batchSize) {
     const slice = mx.Slice(i, i + batchSize)
-    yield await new Promise((resolve) => {
-      process.nextTick(() => resolve([x.index(slice), y.index(slice)]))
-    })
+    // Yield the result in the next tick of loop, so GC can get a chance to run.
+    await nextTick()
+    yield [x.index(slice), y.index(slice)]
   }
 }
 
