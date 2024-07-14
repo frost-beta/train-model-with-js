@@ -31,6 +31,12 @@ Then use the generate script to actually generate some text from the weights:
 node generate.js
 ```
 
+## What's next
+
+After understanding the basics of model training, you can check the
+[train-llama3-js](https://github.com/frost-beta/train-llama3-js) repo on how
+to train a Llama3 model with large datasets.
+
 ## License
 
 Public domain.
